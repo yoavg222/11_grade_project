@@ -1,8 +1,11 @@
 __author__ = 'Yoav'
 import threading
 import hashlib
-from pepper import pepper_users
 import time
+import pickle
+
+from pepper import pepper_users
+from constants import PICKLE_PATH
 
 class Users:
     def __init__(self):
@@ -12,9 +15,8 @@ class Users:
         self.EmailInProcess = {}
         self.cleanup_thread = threading.Thread(target=self.cleanup_emails, daemon=True)
         self.cleanup_thread.start()
+        self.data_base_path = PICKLE_PATH
 
-    def hash_password(self,password,salt):
-        pass
 
     def cleanup_emails(self):
         while True:
@@ -36,7 +38,15 @@ class Users:
 
     def SaveUser(self,name,password,salt,email):
         self.lock_users_dict.acquire()
-        self.users_dict[name] = {"password":password,"salt":salt,"email":email}
+        try:
+            with open(self.data_base_path,"rb") as file:
+                self.users_dict = pickle.load(file)
+        except Exception as e:
+            print("first user")
+        finally:
+            self.users_dict[name] = {"password":password,"salt":salt,"email":email,"cups":0}
+        with open(self.data_base_path,"wb") as file:
+            pickle.dump(self.users_dict,file)
         self.lock_users_dict.release()
 
 

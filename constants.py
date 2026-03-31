@@ -1,0 +1,35 @@
+
+#server
+SERVER_IP = "192.168.1.119"
+SERVER_PORT = 12342
+PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"
+
+ERROR_MSG_LOG_REG = "ERR|error try again"
+REG_SUCCESSFUL = "OKR|good register"
+LOG_SUCCESSFUL = "OKL|good login"
+FOR_PASSWORD = "FOR|enter new password"
+FOR_SUCCESSFUL = "FOR|good change password"
+EMAIL_MESSAGE_SEND = "EML| we send a code to your email enter him"
+EMAIL_SENDER = "assafgruengard@gmail.com"
+EMAIL_PASSWORD = "gkybysjdxnbjvowc"
+KEY_SUCCESSFUL = "KEY|we have a key"
+RSA_MSG = "RSA|OK"
+DHP_MSG = "DPH|OK"
+DELIMITER = "|"
+RSA_PUBLIC_KEY_MSG = "RSA|send me your public key"
+RSA_FIRST = "RSA"
+
+#client
+REG_MSG = "REG"
+LOG_MSG = "LOG"
+FOR_MSG = "FOR"
+RSA_PUBLIC_KEY_REQUEST = "RSA|send me your public key"
+RSA = "RSA"
+DPH = "DPH"
+input_data = ""
+PRIVATE_MSG = "PRV"
+PUBLIC_MSG = "PUB"
+NUM_OF_CUPS = "0"
+user_name = ""
+user_password = ""
+

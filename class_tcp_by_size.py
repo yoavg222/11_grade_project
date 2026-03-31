@@ -1,5 +1,3 @@
-from idlelib.iomenu import encoding
-
 from SecureSession import SecureSession_AES
 
 class recvSend:

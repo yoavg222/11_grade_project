@@ -1,28 +1,17 @@
 import pickle
 import socket
 import threading
+import smtplib
+import ssl
+from email.message import EmailMessage
+import random
 
+from hasherClass import SecureHasher
 from class_tcp_by_size import recvSend
 from users import Users
 from rsaClass import RSA
+from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG,REG_SUCCESSFUL,LOG_SUCCESSFUL,FOR_PASSWORD,FOR_SUCCESSFUL,EMAIL_MESSAGE_SEND,KEY_SUCCESSFUL,RSA_MSG,DHP_MSG,EMAIL_SENDER,EMAIL_PASSWORD,REG_MSG,RSA_PUBLIC_KEY_MSG,RSA_FIRST,LOG_MSG
 
-
-# const
-SERVER_IP = "192.168.1.119"
-SERVER_PORT = 12342
-PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"
-
-ERROR_MSG_LOG_REG = "ERR|error try again"
-REG_SUCCESSFUL = "OKR|good register"
-LOG_SUCCESSFUL = "OKL|good login"
-FOR_PASSWORD = "FOR|enter new password"
-FOR_SUCCESSFUL = "FOR|good change password"
-EmailMessage_SEND = "EML| we send a code to your email enter him"
-email_sender = "assafgruengard@gmail.com"
-email_password = "gkybysjdxnbjvowc"
-KEY_SUCCESSFUL = "KEY|we have a key"
-RSA_MSG = "RSA|OK"
-DHP_MSG = "DPH|OK"
 
 #global variables
 all_to_die = False
@@ -35,7 +24,7 @@ users_SQL =Users()
 
 def rsa_key_exchange(recv_send_server):
     data = recv_send_server.recv_by_size().decode()
-    if data == "RSA|send me your public key":
+    if data == RSA_PUBLIC_KEY_MSG:
         rsa_session = RSA()
         recv_send_server.send_with_size(rsa_session.public_key_to_send())
 
@@ -48,11 +37,38 @@ def rsa_key_exchange(recv_send_server):
         recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
 
 
+def send_email(email_receiver):
+
+
+    em = EmailMessage()
+    em["From"] = EMAIL_SENDER
+    em["To"] = email_receiver
+    em["Subject"] = "Enter a code"
+    email_body = random.randint(1000,9999)
+    code = email_body
+
+    users_SQL.SaveEmail(email_receiver,code)
+
+    em.set_content(str(email_body))
+    context = ssl.create_default_context()
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com",465,context=context)as smtp:
+            smtp.login(EMAIL_SENDER,EMAIL_PASSWORD)
+            smtp.send_message(em)
+            return True,code
+
+    except Exception as e:
+        print(f"error in the send email: {e}")
+        return False
+
 def handle_client(sock,addr,i):
 
     global all_to_die
     global have_key
     global connected
+    global want_exit
+
+    hasher = SecureHasher()
 
     recv_send_server = recvSend(sock,None)
     key = b""
@@ -61,11 +77,48 @@ def handle_client(sock,addr,i):
         data = recv_send_server.recv_by_size()
         key_exchange = data.decode()
 
-        if key_exchange == "RSA":
+        if key_exchange == RSA_FIRST:
             recv_send_server.send_with_size(RSA_MSG)
             key_aes = rsa_key_exchange(recv_send_server)
+            key = key_aes
             print(key_aes.hex())
-        pass
+            have_key = True
+
+
+    recv_send_server = recvSend(sock,key)
+
+    # user_name = ""
+    while not connected:
+        if all_to_die:
+            break
+
+        data = recv_send_server.recv_by_size().decode()
+        print(data)
+
+        if data == "":
+            print(f"client number{i} disconnected")
+            want_exit = True
+            break
+        data = data.split(DELIMITER)
+        if data[0] == REG_MSG:
+            recv_send_server.send_with_size(EMAIL_MESSAGE_SEND)
+            email_send,code = send_email(data[4])
+            if email_send:
+                client_code = recv_send_server.recv_by_size().decode()
+                print(client_code)
+                if users_SQL.IsUserExist(data[1]):
+                    recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+                    break
+                if int(client_code) == code and data[2] == data[3]:
+                    recv_send_server.send_with_size(REG_SUCCESSFUL)
+                    hash_password,salt = hasher.hash_salt_pepper_password(data[2])
+                    users_SQL.SaveUser(data[1],hash_password,salt,data[4])
+
+            else:
+                recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+
+
+
 
     sock.close()
 
@@ -82,11 +135,12 @@ def main():
     try:
         with open(PICKLE_PATH,"rb") as file:
             users_SQL = pickle.load(file)
+            print(users_SQL)
 
     except Exception as e:
         print(f"Error to find Users_DataBase.pkl{e}")
-        users_SQL = {}
-
+        users_SQL =Users()
+        print(users_SQL)
 
 
 
@@ -112,14 +166,14 @@ def main():
 
 
 
-    try:
-        with open(PICKLE_PATH, "wb") as file:
-            pickle.dump(users_SQL.users_dict, file)
-    except Exception as e:
-        print(f"Error in pickle: {e}")
-    finally:
-        server_socket.close()
-        print("bye")
+    # try:
+    #     with open(PICKLE_PATH, "wb") as file:
+    #         pickle.dump(users_SQL.users_dict, file)
+    # except Exception as e:
+    #     print(f"Error in pickle: {e}")
+    # finally:
+    server_socket.close()
+    print("bye")
 
 
 

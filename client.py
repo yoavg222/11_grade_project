@@ -5,26 +5,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from class_tcp_by_size import recvSend
-
-# const
-REG_MSG = "REG"
-LOG_MSG = "LOG"
-FOR_MSG = "FOR"
+from constants import REG_MSG, LOG_MSG, FOR_MSG, RSA_PUBLIC_KEY_REQUEST, RSA, DPH, PRIVATE_MSG, PUBLIC_MSG,DELIMITER,SERVER_IP,SERVER_PORT,NUM_OF_CUPS
 GOOD_MSG = False
 SIGN_IN = False
 KEY_OK = False
-RSA_PUBLIC_KEY_REQUEST = "RSA|send me your public key"
-RSA = "RSA"
-DPH = "DPH"
-input_data = ""
-PRIVATE_MSG = "PRV"
-PUBLIC_MSG = "PUB"
-DELIMITER = "|"
-user_name = ""
-user_password = ""
-
-SERVER_IP = "192.168.1.119"
-SERVER_PORT = 12342
 
 
 def create_aes_key():
@@ -54,8 +38,11 @@ def rsa_key_exchange(key,recv_send_client):
     encrypted_aes_key = encrypted_rsa(server_public_key, key)
     recv_send_client.send_with_size(encrypted_aes_key)
 
+    return True
+
 def agree_on_aes_key(recv_send_client,key):
     global KEY_OK
+
 
     while not KEY_OK:
         radio_button = input("Diffie-hellman or RSA")
@@ -66,8 +53,39 @@ def agree_on_aes_key(recv_send_client,key):
                 return True
             return False
 
+def sign_in_client(recv_send_client):
+    global SIGN_IN
+    global GOOD_MSG
+
+    while not SIGN_IN:
+
+        data = input("enter: register or login or forget password")
+        while not GOOD_MSG:
+            if data != "register" and data != "login" and data != "forget password":
+                continue
+            else:
+                break
+
+        if data == "register":
+            user_name_password = input("enter: user_name,password,checkPassword,email")
+            user_pass = user_name_password.split(" ")
+            to_send = REG_MSG+DELIMITER+user_pass[0]+DELIMITER+user_pass[1]+DELIMITER+user_pass[2]+DELIMITER+user_pass[3]+DELIMITER+NUM_OF_CUPS
+            print(to_send)
+
+            recv_send_client.send_with_size(to_send)
+            from_server = recv_send_client.recv_by_size()
+            if "EML" in from_server.decode():
+                print(from_server.split(DELIMITER.encode())[1].decode())
+                code = input("enter the code:")
+                recv_send_client.send_with_size(code.encode())
+                from_server = recv_send_client.recv_by_size()
+
+                if "OKR" in from_server.decode():
+                    print("good registry")
+
 
 def main():
+
 
     client_socket = socket.socket()
     client_socket.connect((SERVER_IP, SERVER_PORT))
@@ -76,7 +94,14 @@ def main():
     key = create_aes_key()
     print(key.hex())
     if agree_on_aes_key(recv_send_client,key):
-        print("good")
+        print("agree on an aes key with the server")
+    else:
+        client_socket.close()
+
+    recv_send_client = recvSend(client_socket,key)
+    if sign_in_client(recv_send_client):
+        print("we connected")
+
 
 
     client_socket.close()
