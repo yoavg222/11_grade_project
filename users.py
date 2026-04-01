@@ -36,7 +36,7 @@ class Users:
 
 
 
-    def SaveUser(self,name,password,salt,email):
+    def SaveUser(self,name,password,salt,email,cups):
         self.lock_users_dict.acquire()
         try:
             with open(self.data_base_path,"rb") as file:
@@ -44,7 +44,7 @@ class Users:
         except Exception as e:
             print("first user")
         finally:
-            self.users_dict[name] = {"password":password,"salt":salt,"email":email,"cups":0}
+            self.users_dict[name] = {"password":password,"salt":salt,"email":email,"cups":cups}
         with open(self.data_base_path,"wb") as file:
             pickle.dump(self.users_dict,file)
         self.lock_users_dict.release()
@@ -61,7 +61,7 @@ class Users:
     def IsPasswordOK(self,name,password):
         self.lock_users_dict.acquire()
         try:
-            if self.users_dict[name]["password"] == (hashlib.sha256((self.users_dict[name]["salt"]+password+pepper_users).encode())).hexdigest():
+            if (self.users_dict[name]["password"]) == hashlib.sha256((self.users_dict[name]["salt"] + password + pepper_users).encode()).hexdigest():
                 self.lock_users_dict.release()
                 return True
             self.lock_users_dict.release()

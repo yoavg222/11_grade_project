@@ -69,7 +69,7 @@ def handle_client(sock,addr,i):
     global want_exit
 
     hasher = SecureHasher()
-
+    print(f"client {addr} connected")
     recv_send_server = recvSend(sock,None)
     key = b""
     while not have_key:
@@ -87,7 +87,7 @@ def handle_client(sock,addr,i):
 
     recv_send_server = recvSend(sock,key)
 
-    # user_name = ""
+
     while not connected:
         if all_to_die:
             break
@@ -112,12 +112,23 @@ def handle_client(sock,addr,i):
                 if int(client_code) == code and data[2] == data[3]:
                     recv_send_server.send_with_size(REG_SUCCESSFUL)
                     hash_password,salt = hasher.hash_salt_pepper_password(data[2])
-                    users_SQL.SaveUser(data[1],hash_password,salt,data[4])
+                    users_SQL.SaveUser(data[1],hash_password,salt,data[4],0)
 
             else:
                 recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
 
+        elif data[0] == LOG_MSG:
+            print(type(users_SQL))
 
+            if users_SQL.IsUserExist(data[1]) and users_SQL.IsPasswordOK(data[1], data[2]):
+                recv_send_server.send_with_size(LOG_SUCCESSFUL + " " + data[1] + " " + data[2])
+                break
+            else:
+                recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+
+
+    while not want_exit:
+        pass
 
 
     sock.close()
@@ -134,8 +145,10 @@ def main():
 
     try:
         with open(PICKLE_PATH,"rb") as file:
-            users_SQL = pickle.load(file)
-            print(users_SQL)
+            users = pickle.load(file)
+
+            for k,v in users.items():
+                users_SQL.SaveUser(k,users[k]["password"],users[k]["salt"],users[k]["email"],users[k]["cups"])
 
     except Exception as e:
         print(f"Error to find Users_DataBase.pkl{e}")

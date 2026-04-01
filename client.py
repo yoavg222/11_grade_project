@@ -83,6 +83,17 @@ def sign_in_client(recv_send_client):
                 if "OKR" in from_server.decode():
                     print("good registry")
 
+        elif data == "login":
+            user_name_password = input("enter: user_name,password")
+            user_lst = user_name_password.split(" ")
+            to_send = LOG_MSG+DELIMITER+user_lst[0]+DELIMITER+user_lst[1]
+            recv_send_client.send_with_size(to_send)
+            from_server = recv_send_client.recv_by_size().decode()
+            print(from_server)
+            if "good login" in from_server:
+                user_name = from_server.split(" ")[2]
+                user_password = from_server.split(" ")[3]
+                break
 
 def main():
 
