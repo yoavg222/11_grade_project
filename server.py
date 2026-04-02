@@ -10,7 +10,7 @@ from hasherClass import SecureHasher
 from class_tcp_by_size import recvSend
 from users import Users
 from rsaClass import RSA
-from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG,REG_SUCCESSFUL,LOG_SUCCESSFUL,FOR_PASSWORD,FOR_SUCCESSFUL,EMAIL_MESSAGE_SEND,KEY_SUCCESSFUL,RSA_MSG,DHP_MSG,EMAIL_SENDER,EMAIL_PASSWORD,REG_MSG,RSA_PUBLIC_KEY_MSG,RSA_FIRST,LOG_MSG
+from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG,REG_SUCCESSFUL,LOG_SUCCESSFUL,FOR_PASSWORD,FOR_SUCCESSFUL,EMAIL_MESSAGE_SEND,KEY_SUCCESSFUL,RSA_MSG,DHP_MSG,EMAIL_SENDER,EMAIL_PASSWORD,REG_MSG,RSA_PUBLIC_KEY_MSG,RSA_FIRST,LOG_MSG,FOR_MSG,GOOD_EMAIL_CODE,HOME_BUTTON
 
 
 #global variables
@@ -127,8 +127,55 @@ def handle_client(sock,addr,i):
                 recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
 
 
+
+        elif data[0] == FOR_MSG:
+            email = data[1]
+            user = users_SQL.user_by_email(email)
+            if user is None:
+                recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+                continue
+
+            send,code = send_email(email)
+            if send:
+                recv_send_server.send_with_size(EMAIL_MESSAGE_SEND)
+
+            code_from_client = recv_send_server.recv_by_size().decode()
+
+            if int(code_from_client) != code:
+                recv_send_server.send_with_size(EMAIL_MESSAGE_SEND)
+                continue
+
+            recv_send_server.send_with_size(GOOD_EMAIL_CODE)
+            recv_send_server.send_with_size(FOR_PASSWORD)
+
+            from_client = recv_send_server.recv_by_size().decode()
+            if from_client == HOME_BUTTON:
+                continue
+
+            from_client_lst = from_client.split(DELIMITER)
+            if from_client_lst[0] == FOR_MSG:
+                user_new_password = from_client_lst[1]
+                user_new_password_confirm = from_client_lst[2]
+
+                if user_new_password != user_new_password_confirm:
+                    recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+                    continue
+
+                new_password,new_salt = hasher.hash_salt_pepper_password(user_new_password)
+                users_SQL.SaveUser(user,new_password,new_salt,users_SQL.users_dict[user]["email"],users_SQL.users_dict[user]["cups"])
+                recv_send_server.send_with_size(FOR_SUCCESSFUL)
+                continue
+
+            else:
+                recv_send_server.send_with_size(ERROR_MSG_LOG_REG)
+                continue
+
+
+
+
     while not want_exit:
-        pass
+        print("connected")
+        break
 
 
     sock.close()

@@ -1,4 +1,3 @@
-
 #server
 SERVER_IP = "192.168.1.119"
 SERVER_PORT = 12343
@@ -7,6 +6,7 @@ PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"
 ERROR_MSG_LOG_REG = "ERR|error try again"
 REG_SUCCESSFUL = "OKR|good register"
 LOG_SUCCESSFUL = "OKL|good login"
+GOOD_EMAIL_CODE = "OKC|good code"
 FOR_PASSWORD = "FOR|enter new password"
 FOR_SUCCESSFUL = "FOR|good change password"
 EMAIL_MESSAGE_SEND = "EML| we send a code to your email enter him"
@@ -32,4 +32,5 @@ PUBLIC_MSG = "PUB"
 NUM_OF_CUPS = "0"
 user_name = ""
 user_password = ""
+HOME_BUTTON = "HOME"
 

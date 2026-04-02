@@ -95,4 +95,14 @@ class Users:
             self.lock_email_dict.release()
             return False
 
+    def user_by_email(self,email):
+        self.lock_users_dict.acquire()
+        for k in self.users_dict.keys():
+            if email == self.users_dict[k]["email"]:
+                self.lock_users_dict.release()
+                return k
+        self.lock_users_dict.release()
+        return None
+
+
 

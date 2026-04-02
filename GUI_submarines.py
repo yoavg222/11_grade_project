@@ -1,14 +1,20 @@
 from tkinter import *
 from PIL import ImageTk, Image
 
+from class_tcp_by_size import recvSend
+from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE
+from server import connected
+
 
 class LoginForm:
-    def __init__(self, window):
+    def __init__(self, window,network_client):
         # build the window
         self.window = window
         self.window.geometry("1166x718")
         self.window.state("zoomed")
         self.window.resizable(0, 0)
+        self.network = network_client
+
 
 
         # background image
@@ -103,6 +109,8 @@ class LoginForm:
         self.login_btn.image = self.btn_photo
         self.login_btn.place(x=550, y=450)
 
+        self.login_btn.config(command=self.handle_login)
+
         #forgot password
         self.forgot_button = Button(self.lgn_frame,text = "Forgot Password ?",font=("yu gothic ui", 13, "bold underline"),fg = "black",width = 25,bd = 0,bg = "white",activebackground="white",cursor = "hand2")
         self.forgot_button.place(x = 550,y =510 )
@@ -117,6 +125,8 @@ class LoginForm:
         self.signup_button_label = Button(self.lgn_frame,image=photo,bg = "white",activebackground="white",cursor="hand2",bd = 0)
         self.signup_button_label.image = photo
         self.signup_button_label.place(x = 670,y = 555,width = 111,height = 35)
+
+        self.signup_button_label.config(command = self.clear_screen)
 
         #show/hide password
         self.show_image = Image.open("C:\\Users\\user\\Downloads\\img13.png")
@@ -148,14 +158,264 @@ class LoginForm:
         self.password_entry.config(show="*")
 
 
+    def handle_login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if not username or not password:
+            print("Enter username and password")
+            return
+
+        to_send = f"{LOG_MSG}{DELIMITER}{username}{DELIMITER}{password}"
+
+        try:
+            self.network.send_with_size(to_send.encode())
+            response = self.network.recv_by_size().decode()
+            print(f"Server says: {response}")
+
+            if "good login" in response:
+                print("Successful Login")
+            else:
+                print("Login failed")
+
+        except Exception as e:
+            print(f"Error communicating with server: {e}")
+
+
+    def clear_screen(self):
+        for widget in self.window.winfo_children():
+            widget.destroy()
+        self.open_register_screen()
+
+    def open_register_screen(self):
+
+        self.reg_frame = Frame(self.window, bg="white", width=950, height=600)
+        self.reg_frame.place(x=200, y=70)
+
+        # password
+        self.reg_pass_label = Label(self.reg_frame, text="Password", bg="white",
+                                    font=("yu gothic ui", 13, "bold"), fg="black")
+        self.reg_pass_label.place(x=550, y=330)
+        self.reg_pass_entry = Entry(self.reg_frame, highlightthickness=0, relief=FLAT,
+                                    bg="white", fg="black", font=("yu gothic ui", 12, "bold"), show="*")
+        self.reg_pass_entry.place(x=625, y=365, width=270)
+        self.reg_pass_line = Canvas(self.reg_frame, width=300, height=2.0, bg="black", highlightthickness=0)
+        self.reg_pass_line.place(x=550, y=390)
+
+        # password icon
+        img_path = "C:\\Users\\user\\Downloads\\img8.png"
+        raw_img = Image.open(img_path)
+        resized_img = raw_img.resize((25, 25))
+        photo_icon_pass = ImageTk.PhotoImage(resized_img)
+
+        self.reg_pass_icon_label = Label(self.reg_frame, image=photo_icon_pass, bg="black")
+        self.reg_pass_icon_label.image = photo_icon_pass
+        self.reg_pass_icon_label.place(x=550, y=360)
+
+        # confirm password
+
+        self.confirm_password_label = Label(self.reg_frame, text="Confirm Password", bg="white",
+                                            font=("yu gothic ui", 13, "bold"), fg="black")
+        self.confirm_password_label.place(x=550, y=410)
+        self.confirm_password_entry = Entry(self.reg_frame, highlightthickness=0, relief=FLAT,
+                                            bg="white", fg="black", font=("yu gothic ui", 12, "bold"), show="*")
+        self.confirm_password_entry.place(x=625, y=445, width=270)
+        self.confirm_password_line = Canvas(self.reg_frame, width=300, height=2.0, bg="black", highlightthickness=0)
+        self.confirm_password_line.place(x=550, y=470)
+
+        # confirm password icon
+        img_path = "C:\\Users\\user\\Downloads\\img8.png"
+        raw_img = Image.open(img_path)
+        resized_img = raw_img.resize((25, 25))
+        photo_icon_conf = ImageTk.PhotoImage(resized_img)
+
+        self.reg_conf_icon_label = Label(self.reg_frame, image=photo_icon_conf, bg="black")
+        self.reg_conf_icon_label.image = photo_icon_conf
+        self.reg_conf_icon_label.place(x=550, y=440)
+
+        # username
+        self.reg_user_label = Label(self.reg_frame, text="Username", bg="white",
+                                    font=("yu gothic ui", 13, "bold"), fg="black")
+        self.reg_user_label.place(x=550, y=250)
+        self.reg_user_entry = Entry(self.reg_frame, highlightthickness=0, relief=FLAT,
+                                    bg="white", fg="black", font=("yu gothic ui", 12, "bold"))
+        self.reg_user_entry.place(x=625, y=285, width=270)
+        self.reg_user_line = Canvas(self.reg_frame, width=300, height=2.0, bg="black", highlightthickness=0)
+        self.reg_user_line.place(x=550, y=310)
+
+        # username icon
+        self.username_icon_reg_img = Image.open("C:\\Users\\user\\Downloads\\img7.png")
+        resized_image_user = self.username_icon_reg_img.resize((25, 25))
+        photo_user = ImageTk.PhotoImage(resized_image_user)
+        self.username_icon_reg_label = Label(self.reg_frame, image=photo_user, bg="black")
+        self.username_icon_reg_label.image = photo_user
+        self.username_icon_reg_label.place(x=550, y=278)
+
+        # emil
+        self.reg_email_label = Label(self.reg_frame, text="Email", bg="white",
+                                     font=("yu gothic ui", 13, "bold"), fg="black")
+        self.reg_email_label.place(x=550, y=170)
+        self.reg_email_entry = Entry(self.reg_frame, highlightthickness=0, relief=FLAT,
+                                     bg="white", fg="black", font=("yu gothic ui", 12, "bold"))
+        self.reg_email_entry.place(x=625, y=205, width=270)
+        self.reg_email_line = Canvas(self.reg_frame, width=300, height=2.0, bg="black", highlightthickness=0)
+        self.reg_email_line.place(x=550, y=230)
+
+        # email icon
+        self.email_icon_reg_img = Image.open("C:\\Users\\user\\Downloads\\img16.png")
+        resized_image_email = self.email_icon_reg_img.resize((25, 25))
+        photo_email = ImageTk.PhotoImage(resized_image_email)
+
+        self.email_icon_label = Label(self.reg_frame, image=photo_email, bg="white")
+        self.email_icon_label.image = photo_email
+        self.email_icon_label.place(x=550, y=200)
+
+        # left side image
+        self.side_image = Image.open("C:\\Users\\user\\Downloads\\img4.png")
+        resized_image_side = self.side_image.resize((250, 470))
+        photo_side = ImageTk.PhotoImage(resized_image_side)
+        self.side_image_label = Label(self.reg_frame, image=photo_side, bg="white", borderwidth=0, highlightthickness=0)
+        self.side_image_label.image = photo_side
+        self.side_image_label.place(x=5, y=100)
+
+        # reg frame
+        self.txt = "WELCOME"
+        self.heading = Label(self.reg_frame, text=self.txt, font=("yu gothic ui", 25, "bold"), bg="white", fg="black")
+        self.heading.place(x=80, y=30, width=300, height=30)
+
+        # sign in img
+        self.sign_in_image_reg = Image.open("C:\\Users\\user\\Downloads\\img5.png")
+        resized_image_sign = self.sign_in_image_reg.resize((80, 80))
+        photo_sign = ImageTk.PhotoImage(resized_image_sign)
+        self.sign_in_icon_label = Label(self.reg_frame, image=photo_sign, bg="black")
+        self.sign_in_icon_label.image = photo_sign
+        self.sign_in_icon_label.place(x=700, y=80)
+
+        self.sign_in_label = Label(self.reg_frame, text="Sign Up", bg="white", font=("yu gothic ui", 13, "bold"),
+                                   fg="black")
+        self.sign_in_label.place(x=715, y=170)
+
+        # register button
+        self.reg_btn_img = Image.open("C:\\Users\\user\\Downloads\\img17.png")
+        resized_btn_reg = self.reg_btn_img.resize((200, 60))
+        self.reg_btn_photo = ImageTk.PhotoImage(resized_btn_reg)
+
+        self.register_btn = Button(self.reg_frame, image=self.reg_btn_photo, text="", font=("yu gothic ui", 13, "bold"),
+                                   compound="center", fg="white", bd=0, bg="white", activebackground="white",
+                                   cursor="hand2")
+        self.register_btn.image = self.reg_btn_photo
+        self.register_btn.place(x=550, y=500)
+
+        self.register_btn.config(command=self.handle_register)
+
+        # back button
+        self.back_btn_img = Image.open("C:\\Users\\user\\Downloads\\img19.png")
+        resized_btn_back = self.back_btn_img.resize((80, 80))
+        self.back_btn_photo = ImageTk.PhotoImage(resized_btn_back)
+
+        self.back_button_widget = Button(self.reg_frame, image=self.back_btn_photo, text="",
+                                         font=("yu gothic ui", 13, "bold"),
+                                         compound="center", fg="white", bd=0, bg="white", activebackground="white",
+                                         cursor="hand2")
+        self.back_button_widget.image = self.back_btn_photo
+        self.back_button_widget.place(x=800, y=490)
+
+        self.back_button_widget.config(command=self.return_to_login)
 
 
 
-def page():
+    def handle_register(self):
+
+        username = self.reg_user_entry.get()
+        password = self.reg_pass_entry.get()
+        email = self.reg_email_entry.get()
+        confirm_password = self.confirm_password_entry.get()
+
+        if not username or not password or not email or not confirm_password:
+            print("Enter username and password")
+            return
+
+        to_send = f"{REG_MSG}{DELIMITER}{username}{DELIMITER}{password}{DELIMITER}{confirm_password}{DELIMITER}{email}{DELIMITER}{NUM_OF_CUPS}"
+        try:
+            self.network.send_with_size(to_send.encode())
+            response = self.network.recv_by_size().decode()
+            print(f"Server saya:{response}")
+
+            if "EML" in response:
+                self.email_code_page()
+
+
+        except Exception as e:
+            print(f"Error communicating with server: {e}")
+
+
+
+    def return_to_login(self):
+        self.clear_screen()
+        self.__init__(self.window, self.network)
+
+
+    def email_code_page(self):
+        self.clear_screen()
+        self.code_frame = Frame(self.window, bg="white", width=950, height=600)
+        self.code_frame.place(x=200, y=70)
+
+        code_btn_img = Image.open("C:\\Users\\user\\Downloads\\img10.png")
+        resized_code_btn = code_btn_img.resize((250, 60))
+        self.code_btn_photo = ImageTk.PhotoImage(resized_code_btn)
+
+        Label(self.code_frame, text="ENTER CODE", font=("yu gothic ui", 25, "bold"), bg="white", fg="black").place(x=80,y=30)
+        Label(self.code_frame, text="Verification Code", bg="white", font=("yu gothic ui", 13, "bold"),
+              fg="black").place(x=550, y=170)
+
+        self.code_entry = Entry(self.code_frame, highlightthickness=0, relief=FLAT, bg="white", fg="black",
+                                font=("yu gothic ui", 12, "bold"))
+        self.code_entry.place(x=550, y=205, width=300)
+
+        Canvas(self.code_frame, width=300, height=2.0, bg="black", highlightthickness=0).place(x=550, y=230)
+
+        self.send_code_btn = Button(self.code_frame, image=self.code_btn_photo, text="SEND",
+                                    font=("yu gothic ui", 13, "bold"), compound="center", fg="white", bd=0, bg="white",
+                                    activebackground="white", cursor="hand2", command=self.submit_code)
+        self.send_code_btn.image = self.code_btn_photo
+        self.send_code_btn.place(x=550, y=300)
+
+
+
+        # back button
+        self.back_btn_img = Image.open("C:\\Users\\user\\Downloads\\img19.png")
+        resized_btn_back = self.back_btn_img.resize((80, 80))
+        self.back_btn_photo = ImageTk.PhotoImage(resized_btn_back)
+
+        self.back_button_widget = Button(self.code_frame, image=self.back_btn_photo, text="",
+                                         font=("yu gothic ui", 13, "bold"),
+                                         compound="center", fg="white", bd=0, bg="white", activebackground="white",
+                                         cursor="hand2")
+        self.back_button_widget.image = self.back_btn_photo
+        self.back_button_widget.place(x=800, y=490)
+
+        self.back_button_widget.config(command=self.return_to_login)
+
+    def submit_code(self):
+        code = self.code_entry.get()
+        self.network.send_with_size(code.encode())
+
+        response = self.network.recv_by_size().decode()
+        if "OKR" in response:
+            print("good registry")
+            self.return_to_login()
+
+
+
+
+
+
+
+
+
+
+def page(network_client):
     window = Tk()
-    LoginForm(window)
+    LoginForm(window,network_client)
     window.mainloop()
 
-
-if __name__ == "__main__":
-    page()
