@@ -2,7 +2,7 @@ from tkinter import *
 from PIL import ImageTk, Image
 
 from class_tcp_by_size import recvSend
-from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE
+from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD
 from server import connected
 
 
@@ -112,7 +112,7 @@ class LoginForm:
         self.login_btn.config(command=self.handle_login)
 
         #forgot password
-        self.forgot_button = Button(self.lgn_frame,text = "Forgot Password ?",font=("yu gothic ui", 13, "bold underline"),fg = "black",width = 25,bd = 0,bg = "white",activebackground="white",cursor = "hand2")
+        self.forgot_button = Button(self.lgn_frame,text = "Forgot Password ?",font=("yu gothic ui", 13, "bold underline"),fg = "black",width = 25,bd = 0,bg = "white",activebackground="white",cursor = "hand2",command=self.forget_password_handle)
         self.forgot_button.place(x = 550,y =510 )
 
         #sign Up
@@ -186,6 +186,7 @@ class LoginForm:
         for widget in self.window.winfo_children():
             widget.destroy()
         self.open_register_screen()
+
 
     def open_register_screen(self):
 
@@ -342,7 +343,7 @@ class LoginForm:
             print(f"Server saya:{response}")
 
             if "EML" in response:
-                self.email_code_page()
+                self.email_code_page("register")
 
 
         except Exception as e:
@@ -355,7 +356,7 @@ class LoginForm:
         self.__init__(self.window, self.network)
 
 
-    def email_code_page(self):
+    def email_code_page(self,type_of_request):
         self.clear_screen()
         self.code_frame = Frame(self.window, bg="white", width=950, height=600)
         self.code_frame.place(x=200, y=70)
@@ -374,9 +375,11 @@ class LoginForm:
 
         Canvas(self.code_frame, width=300, height=2.0, bg="black", highlightthickness=0).place(x=550, y=230)
 
+
+
         self.send_code_btn = Button(self.code_frame, image=self.code_btn_photo, text="SEND",
                                     font=("yu gothic ui", 13, "bold"), compound="center", fg="white", bd=0, bg="white",
-                                    activebackground="white", cursor="hand2", command=self.submit_code)
+                                    activebackground="white", cursor="hand2", command=lambda:self.submit_code(type_of_request))
         self.send_code_btn.image = self.code_btn_photo
         self.send_code_btn.place(x=550, y=300)
 
@@ -396,19 +399,182 @@ class LoginForm:
 
         self.back_button_widget.config(command=self.return_to_login)
 
-    def submit_code(self):
+
+    def submit_code(self,type_of_request):
         code = self.code_entry.get()
         self.network.send_with_size(code.encode())
 
         response = self.network.recv_by_size().decode()
-        if "OKR" in response:
-            print("good registry")
-            self.return_to_login()
+        if type_of_request == "register":
+            if "OKR" in response:
+                print("good registry")
+                self.return_to_login()
+        else:
+            if response == GOOD_EMAIL_CODE:
+                response = self.network.recv_by_size().decode()
+                if response == FOR_PASSWORD:
+                    self.forget_password_page()
+
+
+
+    def forget_password_page(self):
+
+        # forget password page
+        self.clear_screen()
+        self.forget_password_frame = Frame(self.window, bg="white", width=950, height=600)
+        self.forget_password_frame.place(x=200, y=70)
+
+        code_btn_img = Image.open("C:\\Users\\user\\Downloads\\img10.png")
+        resized_code_btn = code_btn_img.resize((250, 60))
+        self.code_btn_photo = ImageTk.PhotoImage(resized_code_btn)
+
+        Label(self.forget_password_frame, text="ENTER NEW PASSWORD", font=("yu gothic ui", 25, "bold"), bg="white",
+              fg="black").place(x=80,
+                                y=30)
+        Label(self.forget_password_frame, text="Password", bg="white", font=("yu gothic ui", 13, "bold"),
+              fg="black").place(x=550, y=170)
+
+        self.new_password_entry = Entry(self.forget_password_frame, highlightthickness=0, relief=FLAT, bg="white",
+                                        fg="black",
+                                        font=("yu gothic ui", 12, "bold"))
+        self.new_password_entry.place(x=550, y=205, width=300)
+
+        Canvas(self.forget_password_frame, width=300, height=2.0, bg="black", highlightthickness=0).place(x=550, y=230)
+
+        Label(self.forget_password_frame, text="Confirm Password", bg="white", font=("yu gothic ui", 13, "bold"),
+              fg="black").place(x=550, y=270)
+
+        self.confirm_password_entry = Entry(self.forget_password_frame, highlightthickness=0, relief=FLAT, bg="white",
+                                            fg="black",
+                                            font=("yu gothic ui", 12, "bold"))
+        self.confirm_password_entry.place(x=550, y=305, width=300)
+
+        Canvas(self.forget_password_frame, width=300, height=2.0, bg="black", highlightthickness=0).place(x=550, y=330)
+
+        self.change_password_button = Button(self.forget_password_frame, image=self.code_btn_photo, text="CHANGE",
+                                             font=("yu gothic ui", 13, "bold"), compound="center", fg="white", bd=0,
+                                             bg="white",
+                                             activebackground="white", cursor="hand2",
+                                             command=self.change_password)
+        self.change_password_button.image = self.code_btn_photo
+        self.change_password_button.place(x=550, y=490)
+
+        # back button
+        self.back_btn_img = Image.open("C:\\Users\\user\\Downloads\\img19.png")
+        resized_btn_back = self.back_btn_img.resize((80, 80))
+        self.back_btn_photo = ImageTk.PhotoImage(resized_btn_back)
+
+        self.back_button_widget = Button(self.forget_password_frame, image=self.back_btn_photo, text="",
+                                         font=("yu gothic ui", 13, "bold"),
+                                         compound="center", fg="white", bd=0, bg="white", activebackground="white",
+                                         cursor="hand2")
+        self.back_button_widget.image = self.back_btn_photo
+        self.back_button_widget.place(x=800, y=490)
+
+        self.back_button_widget.config(command=self.return_to_login)
 
 
 
 
+    def forget_password_handle(self):
+        self.clear_screen()
 
+        self.forget_frame = Frame(self.window, bg="white", width=950, height=600)
+        self.forget_frame.place(x=200, y=70)
+
+        Label(self.forget_frame, text="FORGOT PASSWORD", font=("yu gothic ui", 25, "bold"),
+              bg="white", fg="black").place(x=80, y=30)
+
+        Label(self.forget_frame, text="Enter Your Email", bg="white", font=("yu gothic ui", 13, "bold"),
+              fg="black").place(x=550, y=170)
+
+        self.user_email_entry = Entry(self.forget_frame, highlightthickness=0, relief=FLAT,
+                                      bg="white", fg="black", font=("yu gothic ui", 12, "bold"))
+        self.user_email_entry.place(x=550, y=205, width=300)
+
+        Canvas(self.forget_frame, width=300, height=2.0, bg="black", highlightthickness=0).place(x=550, y=230)
+
+        email_icon_img = Image.open("C:\\Users\\user\\Downloads\\img16.png")
+        resized_email_icon = email_icon_img.resize((25, 25))
+        self.email_icon_photo = ImageTk.PhotoImage(resized_email_icon)
+
+        self.email_icon_label = Label(self.forget_frame, image=self.email_icon_photo, bg="white")
+        self.email_icon_label.image = self.email_icon_photo
+        self.email_icon_label.place(x=515, y=200)
+
+        forget_btn_img = Image.open("C:\\Users\\user\\Downloads\\img17.png")
+        resized_forget_btn = forget_btn_img.resize((200, 60))
+        self.forget_btn_photo = ImageTk.PhotoImage(resized_forget_btn)
+
+        self.send_email_btn = Button(self.forget_frame, image=self.forget_btn_photo, text="",
+                                     font=("yu gothic ui", 13, "bold"), compound="center", fg="white",
+                                     bd=0, bg="white", activebackground="white", cursor="hand2",
+                                     command=lambda: self.submit_forgot_password())
+
+
+        self.send_email_btn.image = self.forget_btn_photo
+        self.send_email_btn.place(x=550, y=300)
+
+        back_btn_img = Image.open("C:\\Users\\user\\Downloads\\img19.png")
+        resized_back_btn = back_btn_img.resize((60, 60))
+        self.back_btn_photo = ImageTk.PhotoImage(resized_back_btn)
+
+        self.back_to_lgn_btn = Button(self.forget_frame, image=self.back_btn_photo, bd=0, bg="white",
+                                      activebackground="white", cursor="hand2", command=self.return_to_login)
+        self.back_to_lgn_btn.image = self.back_btn_photo
+        self.back_to_lgn_btn.place(x=820, y=295)
+
+
+    def change_password(self):
+        new_password = self.new_password_entry.get()
+        new_password_confirm = self.confirm_password_entry.get()
+
+        to_send = f"{FOR_MSG}{DELIMITER}{new_password}{DELIMITER}{new_password_confirm}"
+        self.network.send_with_size(to_send.encode())
+
+        response = self.network.recv_by_size().decode()
+
+        if response == FOR_SUCCESSFUL:
+            self.__init__(self.window,self.network)
+
+
+
+
+    def submit_forgot_password(self):
+        email = self.user_email_entry.get()
+
+        if not email or "@" not in email:
+            print("Error: Please enter a valid email address")
+            return
+
+        to_send = f"{FOR_MSG}{DELIMITER}{email}"
+        self.network.send_with_size(to_send.encode())
+
+        response = self.network.recv_by_size().decode()
+        if "EML" in response:
+            self.email_code_page("forget password")
+
+    # def show_temp_message(self, text, duration=4000):
+    #     frames = [
+    #         "lgn_frame", "reg_frame", "code_frame",
+    #         "forget_frame", "forget_password_frame"
+    #     ]
+    #
+    #     target_frame = None
+    #     for attr in frames:
+    #         if hasattr(self, attr):
+    #             frame_obj = getattr(self, attr)
+    #             if frame_obj.winfo_exists():
+    #                 target_frame = frame_obj
+    #                 break
+    #
+    #     if target_frame:
+    #         temp_label = Label(target_frame, text=text, fg="red", bg="white",
+    #                            font=("yu gothic ui", 11, "bold"))
+    #         temp_label.place(x=550, y=400)
+    #
+    #         self.window.after(duration, temp_label.destroy)
+    #         self.return_to_login()
 
 
 
