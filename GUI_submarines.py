@@ -1,9 +1,12 @@
+from msilib.schema import RadioButton
 from tkinter import *
 from PIL import ImageTk, Image
 
 from class_tcp_by_size import recvSend
-from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD
+from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD,GET_USER,RSA,DPH
 from server import connected
+from users import Users
+
 
 
 class LoginForm:
@@ -13,7 +16,8 @@ class LoginForm:
         self.window.geometry("1166x718")
         self.window.state("zoomed")
         self.window.resizable(0, 0)
-        self.network = network_client
+        self.network = recvSend(network_client,None)
+        self.client_socket = network_client
 
 
 
@@ -142,6 +146,14 @@ class LoginForm:
         self.photo_hide = ImageTk.PhotoImage(resized_btn)
 
 
+        #radio button
+        self.var_key = StringVar()
+        radio1 = Radiobutton(self.window,text ="RSA",variable = self.var_key,value = "RSA")
+        radio1.pack(pady = (300,5))
+
+        radio2= Radiobutton(self.window, text="Diffie-Hellman", variable=self.var_key, value="Diffie-Hellman")
+        radio2.pack(pady=(5, 10))
+
     def show(self):
         self.hide_button = Button(self.lgn_frame, image=self.photo_show, bg="black", activebackground="black",
                                     cursor="hand2", bd=0, highlightthickness=0,command=self.hide)
@@ -159,12 +171,32 @@ class LoginForm:
 
 
     def handle_login(self):
+        from client import rsa_key_exchange, create_aes_key,df_key_exchange
         username = self.username_entry.get()
         password = self.password_entry.get()
-
-        if not username or not password:
-            print("Enter username and password")
+        key_exchange = self.var_key.get()
+        if not username or not password or not key_exchange:
+            print("Enter username and password and select key exchange ")
             return
+
+        if key_exchange == RSA:
+            key = create_aes_key()
+            success,key = rsa_key_exchange(key,self.network)
+
+            if success:
+                self.network = recvSend(self.client_socket,key)
+            else:
+                print("Error")
+                return
+
+        if key_exchange == "Diffie-Hellman":
+            success, key_df = df_key_exchange(self.network)
+            if success:
+                self.network = recvSend(self.client_socket,key_df)
+            else:
+                print("Error")
+                return
+
 
         to_send = f"{LOG_MSG}{DELIMITER}{username}{DELIMITER}{password}"
 
@@ -175,6 +207,8 @@ class LoginForm:
 
             if "good login" in response:
                 print("Successful Login")
+                self.opening_page(username)
+
             else:
                 print("Login failed")
 
@@ -554,27 +588,67 @@ class LoginForm:
         if "EML" in response:
             self.email_code_page("forget password")
 
-    # def show_temp_message(self, text, duration=4000):
-    #     frames = [
-    #         "lgn_frame", "reg_frame", "code_frame",
-    #         "forget_frame", "forget_password_frame"
-    #     ]
-    #
-    #     target_frame = None
-    #     for attr in frames:
-    #         if hasattr(self, attr):
-    #             frame_obj = getattr(self, attr)
-    #             if frame_obj.winfo_exists():
-    #                 target_frame = frame_obj
-    #                 break
-    #
-    #     if target_frame:
-    #         temp_label = Label(target_frame, text=text, fg="red", bg="white",
-    #                            font=("yu gothic ui", 11, "bold"))
-    #         temp_label.place(x=550, y=400)
-    #
-    #         self.window.after(duration, temp_label.destroy)
-    #         self.return_to_login()
+
+
+    def opening_page(self,username):
+        #user
+        to_send = f"{GET_USER}{DELIMITER}{username}"
+        self.network.send_with_size(to_send)
+        from_server = self.network.recv_by_size().decode()
+
+        num_of_cups = from_server.split(DELIMITER)[1]
+
+        #background image
+        self.window.update_idletasks()
+        width = self.window.winfo_width()
+        height = self.window.winfo_height()
+
+        self.bg_frame = Image.open("C:\\Users\\user\\Downloads\\img20.png")
+        self.bg_frame = self.bg_frame.resize((width, height), Image.LANCZOS)
+        photo = ImageTk.PhotoImage(self.bg_frame)
+
+        self.bg_panel = Label(self.window, image=photo, bd=0)
+        self.bg_panel.image = photo
+        self.bg_panel.place(x=0, y=0, relwidth=1, relheight=1)
+
+        #frame
+        self.opening_page_frame = Frame(self.window, bg="white", width=500, height=500)
+        self.opening_page_frame.place(x=100, y=50)
+
+        #username on screen
+        self.username_icon_reg_img = Image.open("C:\\Users\\user\\Downloads\\img7.png")
+        resized_image_user = self.username_icon_reg_img.resize((35,35))
+        photo_user = ImageTk.PhotoImage(resized_image_user)
+        self.username_icon_reg_label = Label(self.opening_page_frame, image=photo_user, bg="black")
+        self.username_icon_reg_label.image = photo_user
+        self.username_icon_reg_label.place(x=0, y=10)
+
+        Label(self.opening_page_frame, text=username, font=("yu gothic ui", 10, "bold"),
+              bg="white", fg="black").place(x=40, y=17)
+
+        #num of cups on screen
+        self.cups_icon_reg_img = Image.open("C:\\Users\\user\\Downloads\\img21.png")
+        resized_image_user = self.cups_icon_reg_img.resize((35, 35))
+        photo_user = ImageTk.PhotoImage(resized_image_user)
+        self.cups_icon_reg_label = Label(self.opening_page_frame, image=photo_user, bg="black")
+        self.cups_icon_reg_label.image = photo_user
+        self.cups_icon_reg_label.place(x=0, y=55)
+
+        Label(self.opening_page_frame, text=num_of_cups, font=("yu gothic ui", 10, "bold"),
+              bg="white", fg="black").place(x=40, y=62)
+
+        #start game button
+        start_game_btn = Image.open("C:\\Users\\user\\Downloads\\img22.png")
+        resized_back_btn = start_game_btn.resize((120, 120))
+        self.start_game_btn_photo = ImageTk.PhotoImage(resized_back_btn)
+
+        self.start_game = Button(self.opening_page_frame, image=self.start_game_btn_photo, bd=0, bg="white",
+                                      activebackground="white", cursor="hand2", command=self.return_to_login)
+        self.start_game.image = self.start_game_btn_photo
+        self.start_game.place(x=150, y=250)
+
+
+
 
 
 

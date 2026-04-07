@@ -1,6 +1,6 @@
 #server
 SERVER_IP = "192.168.1.119"
-SERVER_PORT = 12344
+SERVER_PORT = 12355
 PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"
 
 ERROR_MSG_LOG_REG = "ERR|error try again"
@@ -14,10 +14,14 @@ EMAIL_SENDER = "assafgruengard@gmail.com"
 EMAIL_PASSWORD = "gkybysjdxnbjvowc"
 KEY_SUCCESSFUL = "KEY|we have a key"
 RSA_MSG = "RSA|OK"
-DHP_MSG = "DPH|OK"
+DH_MSG = "DPH|OK"
 DELIMITER = "|"
 RSA_PUBLIC_KEY_MSG = "RSA|send me your public key"
+DH_PUBLIC_KEY_MSG = "DPH|send me your public key"
 RSA_FIRST = "RSA"
+DH_FIRST = "DPH"
+DELIMITER2 = b"|"
+GET_USER = "GET"
 
 #client
 REG_MSG = "REG"

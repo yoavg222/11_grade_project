@@ -106,3 +106,8 @@ class Users:
 
 
 
+    def find_user(self,username):
+        print(self.users_dict)
+        if username in self.users_dict:
+            return self.users_dict[username]
+        return None

@@ -5,12 +5,20 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import random
+import hashlib
+from typing import final
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
 from hasherClass import SecureHasher
 from class_tcp_by_size import recvSend
 from users import Users
 from rsaClass import RSA
-from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG,REG_SUCCESSFUL,LOG_SUCCESSFUL,FOR_PASSWORD,FOR_SUCCESSFUL,EMAIL_MESSAGE_SEND,KEY_SUCCESSFUL,RSA_MSG,DHP_MSG,EMAIL_SENDER,EMAIL_PASSWORD,REG_MSG,RSA_PUBLIC_KEY_MSG,RSA_FIRST,LOG_MSG,FOR_MSG,GOOD_EMAIL_CODE,HOME_BUTTON
+from dhClass import DH
+from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG, REG_SUCCESSFUL, LOG_SUCCESSFUL, \
+    FOR_PASSWORD, FOR_SUCCESSFUL, EMAIL_MESSAGE_SEND, KEY_SUCCESSFUL, RSA_MSG, DH_MSG, EMAIL_SENDER, EMAIL_PASSWORD, \
+    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,DELIMITER2,GET_USER
 
 
 #global variables
@@ -21,11 +29,65 @@ want_exit = False
 
 #from classes
 users_SQL =Users()
+rsa_session = RSA()
+
+def encrypt_with_rsa_digital_signature(rsa_private_key,signature):
+    final_signature = rsa_private_key.sign(
+        signature,padding.PSS(
+            mgf = padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    return final_signature
+
+
+
+def digital_signature(public_key_dh):
+    rsa_private_key = rsa_session.private_key
+    rsa_public_key = rsa_session.public_key
+    signature = encrypt_with_rsa_digital_signature(rsa_private_key,public_key_dh)
+
+    return signature,rsa_public_key
+
+
+def dh_key_exchange(recv_send_server):
+    data = recv_send_server.recv_by_size().decode()
+    if data == DH_PUBLIC_KEY_MSG:
+        dh_session = DH()
+
+        to_send_parameters = dh_session.ready_to_send()
+        recv_send_server.send_with_size(to_send_parameters)
+
+        client_public_key = recv_send_server.recv_by_size()
+        public_key = dh_session.create_keys()
+        public_key_digital_signature,rsa_public_key = digital_signature(public_key)
+
+        pem_public = rsa_public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format = serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        print(len(public_key_digital_signature))
+        recv_send_server.send_with_size(pem_public)
+        to_send = public_key_digital_signature+public_key
+        print(to_send)
+        recv_send_server.send_with_size(to_send)
+
+        print(public_key_digital_signature)
+
+        shared_key = dh_session.create_shared_key(client_public_key)
+
+        print(shared_key)
+        return shared_key
+
+
+
+
 
 def rsa_key_exchange(recv_send_server):
     data = recv_send_server.recv_by_size().decode()
     if data == RSA_PUBLIC_KEY_MSG:
-        rsa_session = RSA()
         recv_send_server.send_with_size(rsa_session.public_key_to_send())
 
         encrypted_rsa_key = recv_send_server.recv_by_size()
@@ -82,6 +144,13 @@ def handle_client(sock,addr,i):
             key_aes = rsa_key_exchange(recv_send_server)
             key = key_aes
             print(key_aes.hex())
+            have_key = True
+
+
+        if key_exchange == DH_FIRST:
+            recv_send_server.send_with_size(DH_MSG)
+            key_aes = dh_key_exchange(recv_send_server)
+            key = key_aes
             have_key = True
 
 
@@ -175,6 +244,12 @@ def handle_client(sock,addr,i):
 
     while not want_exit:
         print("connected")
+        data = recv_send_server.recv_by_size().decode()
+        data_lst = data.split(DELIMITER)
+        if data_lst[0] == GET_USER:
+            user = users_SQL.find_user(data_lst[1])
+            to_send = f"{GET_USER}{DELIMITER}{user["cups"]}"
+            recv_send_server.send_with_size(to_send)
         break
 
 
@@ -226,17 +301,8 @@ def main():
 
 
 
-    # try:
-    #     with open(PICKLE_PATH, "wb") as file:
-    #         pickle.dump(users_SQL.users_dict, file)
-    # except Exception as e:
-    #     print(f"Error in pickle: {e}")
-    # finally:
     server_socket.close()
     print("bye")
-
-
-
 
 
 
