@@ -1,5 +1,4 @@
 import socket
-from tkinter import *
 from GUI_submarines import page
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -9,7 +8,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
 
-from constants import RSA_PUBLIC_KEY_REQUEST, RSA, DPH, PRIVATE_MSG, PUBLIC_MSG,DELIMITER,SERVER_IP,SERVER_PORT,NUM_OF_CUPS,HOME_BUTTON,GOOD_EMAIL_CODE,RSA_MSG,DH_MSG,DH_PUBLIC_KEY_MSG,DELIMITER2
+from constants import RSA_PUBLIC_KEY_REQUEST, RSA, DPH,SERVER_IP,SERVER_PORT,RSA_MSG,DH_MSG,DH_PUBLIC_KEY_MSG
 GOOD_MSG = False
 SIGN_IN = False
 KEY_OK = False

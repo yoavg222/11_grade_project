@@ -5,8 +5,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import random
-import hashlib
-from typing import final
+
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -17,8 +16,8 @@ from users import Users
 from rsaClass import RSA
 from dhClass import DH
 from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG, REG_SUCCESSFUL, LOG_SUCCESSFUL, \
-    FOR_PASSWORD, FOR_SUCCESSFUL, EMAIL_MESSAGE_SEND, KEY_SUCCESSFUL, RSA_MSG, DH_MSG, EMAIL_SENDER, EMAIL_PASSWORD, \
-    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,DELIMITER2,GET_USER
+    FOR_PASSWORD, FOR_SUCCESSFUL, EMAIL_MESSAGE_SEND, RSA_MSG, DH_MSG, EMAIL_SENDER, EMAIL_PASSWORD, \
+    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,GET_USER
 
 
 #global variables

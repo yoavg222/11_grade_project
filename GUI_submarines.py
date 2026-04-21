@@ -1,11 +1,9 @@
-from msilib.schema import RadioButton
 from tkinter import *
 from PIL import ImageTk, Image
 
 from class_tcp_by_size import recvSend
-from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD,GET_USER,RSA,DPH
-from server import connected
-from users import Users
+from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD,GET_USER,RSA
+
 
 
 
@@ -643,9 +641,13 @@ class LoginForm:
         self.start_game_btn_photo = ImageTk.PhotoImage(resized_back_btn)
 
         self.start_game = Button(self.opening_page_frame, image=self.start_game_btn_photo, bd=0, bg="white",
-                                      activebackground="white", cursor="hand2", command=self.return_to_login)
+                                      activebackground="white", cursor="hand2", command=self.wait_screen)
         self.start_game.image = self.start_game_btn_photo
         self.start_game.place(x=150, y=250)
+
+
+    def wait_screen(self):
+        pass
 
 
 
