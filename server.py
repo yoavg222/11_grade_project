@@ -5,7 +5,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import random
-
+import bdb
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
