@@ -37,4 +37,5 @@ NUM_OF_CUPS = "0"
 user_name = ""
 user_password = ""
 HOME_BUTTON = "HOME"
+ASSAF = "ASSAF"
 
