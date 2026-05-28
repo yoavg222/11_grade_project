@@ -3,10 +3,11 @@ import socket
 import threading
 import smtplib
 import ssl
+import time
 from email.message import EmailMessage
 import random
-import bdb
 
+from roomGame import Room
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
@@ -15,20 +16,70 @@ from class_tcp_by_size import recvSend
 from users import Users
 from rsaClass import RSA
 from dhClass import DH
+from serverThread import workerThread
 from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG, REG_SUCCESSFUL, LOG_SUCCESSFUL, \
     FOR_PASSWORD, FOR_SUCCESSFUL, EMAIL_MESSAGE_SEND, RSA_MSG, DH_MSG, EMAIL_SENDER, EMAIL_PASSWORD, \
-    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,GET_USER
+    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,GET_USER,JOIN_MSG,JON_MSG_OK
 
 
 #global variables
 all_to_die = False
-have_key = False
-connected = False
-want_exit = False
-
+game_start = False
+players = []
+num_players = 0
+players_lock = threading.Lock()
+game_lock = threading.Lock()
 #from classes
 users_SQL =Users()
 rsa_session = RSA()
+
+
+def game_logic(player1, player2):
+    p1: recvSend = player1
+    p2: recvSend = player2
+    
+    first_places= []
+    second_places = []
+    
+    room = Room(p1, p2)
+    num = room.who_first()
+
+
+    if num == 1:
+        first = p1  
+        second = p2
+    else:
+        first = p2
+        second = p1
+    
+    first.send_with_size("FIR| chose 3 places")
+    second.send_with_size("SEC| chose 3 places")
+    
+    first.set_timeout()
+    second.set_timeout()
+
+    try:
+        place_first = first.recv_by_size()
+        place_second = second.recv_by_size()
+
+        place_first = place_first.split(DELIMITER)
+        place_second = place_second.split(DELIMITER)
+
+        first_places = room.add_place_to_lst(place_first)
+        second_places = room.add_place_to_lst(place_second)
+
+
+    except socket.timeout:
+        print("Timeout: One of the players took too long!")
+    except Exception as e:
+        print(f"Error in game_logic: {e}")
+
+
+
+
+
+
+
 
 def encrypt_with_rsa_digital_signature(rsa_private_key,signature):
     final_signature = rsa_private_key.sign(
@@ -125,9 +176,12 @@ def send_email(email_receiver):
 def handle_client(sock,addr,i):
 
     global all_to_die
-    global have_key
-    global connected
-    global want_exit
+    global players
+    global num_players
+    global game_start
+    have_key = False
+    connected = False
+    want_exit = False
 
     hasher = SecureHasher()
     print(f"client {addr} connected")
@@ -154,7 +208,7 @@ def handle_client(sock,addr,i):
 
 
     recv_send_server = recvSend(sock,key)
-
+    users_SQL.add_user_by_socket_dict(recv_send_server,sock)
 
     while not connected:
         if all_to_die:
@@ -249,7 +303,45 @@ def handle_client(sock,addr,i):
             user = users_SQL.find_user(data_lst[1])
             to_send = f"{GET_USER}{DELIMITER}{user["cups"]}"
             recv_send_server.send_with_size(to_send)
-        break
+
+        data = recv_send_server.recv_by_size().decode()
+        data_lst = data.split(DELIMITER)
+
+        to_send = ""
+        if data_lst[0] == JOIN_MSG:
+            with players_lock:
+                players.append(sock)
+                num_players+=1
+            while True:
+                if len(players) == 2:
+                    break
+                time.sleep(1)
+            to_send = JON_MSG_OK
+
+
+        recv_send_server.send_with_size(to_send)
+        game_lock.acquire()
+        if not game_start:
+            player1 = players[0]
+            player2 = players[1]
+
+            recv_send_p1 = users_SQL.find_by_socket(player1)
+            recv_send_p2 = users_SQL.find_by_socket(player2)
+
+            t = workerThread(game_logic,recv_send_p1,recv_send_p2)
+            t.start()
+
+        game_start = True
+        game_lock.release()
+        return
+
+
+
+
+
+
+
+
 
 
     sock.close()

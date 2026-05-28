@@ -16,7 +16,8 @@ class Users:
         self.cleanup_thread = threading.Thread(target=self.cleanup_emails, daemon=True)
         self.cleanup_thread.start()
         self.data_base_path = PICKLE_PATH
-
+        self.user_by_socket_dict = {}
+        self.lock_user_by_socket_dict = threading.Lock()
 
     def cleanup_emails(self):
         while True:
@@ -111,3 +112,13 @@ class Users:
         if username in self.users_dict:
             return self.users_dict[username]
         return None
+
+
+    def add_user_by_socket_dict(self,recv_send,socket):
+        self.lock_user_by_socket_dict.acquire()
+        self.user_by_socket_dict[socket] = recv_send
+        self.lock_user_by_socket_dict.release()
+
+    def find_by_socket(self,sock):
+        return self.user_by_socket_dict[sock]
+

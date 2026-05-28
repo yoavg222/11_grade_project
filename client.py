@@ -101,7 +101,6 @@ def df_key_exchange(recv_send_client):
 
 
 def main():
-
     client_socket = socket.socket()
     client_socket.connect((SERVER_IP, SERVER_PORT))
 

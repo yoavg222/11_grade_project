@@ -3,6 +3,7 @@ from tkinter.ttk import Progressbar
 import sys
 from PIL import Image, ImageTk
 
+
 root = Tk()
 root.resizable(0,0)
 
@@ -48,6 +49,8 @@ def exit_wind():
     sys.exit(root.destroy())
 
 
+
+
 i = 0
 
 def load():
@@ -60,5 +63,6 @@ def load():
         progress['value'] = 10*i
         i += 1
 
-load()
-root.mainloop()
+def main():
+    load()
+    root.mainloop()

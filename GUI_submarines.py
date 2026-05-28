@@ -2,20 +2,21 @@ from tkinter import *
 from PIL import ImageTk, Image
 
 from class_tcp_by_size import recvSend
-from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD,GET_USER,RSA
-
-
+from constants import user_name, LOG_MSG, DELIMITER, REG_MSG, NUM_OF_CUPS,GOOD_EMAIL_CODE,FOR_MSG,FOR_SUCCESSFUL,FOR_PASSWORD,GET_USER,RSA,JOIN_GAME
+from pygame_submarines import Game
 
 
 class LoginForm:
-    def __init__(self, window,network_client):
+    def __init__(self, window,network_client,back):
         # build the window
         self.window = window
         self.window.geometry("1166x718")
         self.window.state("zoomed")
         self.window.resizable(0, 0)
-        self.network = recvSend(network_client,None)
-        self.client_socket = network_client
+        if not back:
+            self.network = recvSend(network_client,None)
+            self.client_socket = network_client
+            self.have_key = False
 
 
 
@@ -169,31 +170,35 @@ class LoginForm:
 
 
     def handle_login(self):
-        from client import rsa_key_exchange, create_aes_key,df_key_exchange
+        from client import rsa_key_exchange, create_aes_key, df_key_exchange
         username = self.username_entry.get()
         password = self.password_entry.get()
         key_exchange = self.var_key.get()
-        if not username or not password or not key_exchange:
-            print("Enter username and password and select key exchange ")
+        if not username or not password:
+            if not self.have_key:
+                if not key_exchange:
+                    print("Enter username and password and select key exchange ")
+                print("Enter username and password")
             return
 
-        if key_exchange == RSA:
-            key = create_aes_key()
-            success,key = rsa_key_exchange(key,self.network)
+        if not self.have_key:
+            if key_exchange == RSA:
+                key = create_aes_key()
+                success,key = rsa_key_exchange(key,self.network)
 
-            if success:
-                self.network = recvSend(self.client_socket,key)
-            else:
-                print("Error")
-                return
+                if success:
+                    self.network = recvSend(self.client_socket,key)
+                else:
+                    print("Error")
+                    return
 
-        if key_exchange == "Diffie-Hellman":
-            success, key_df = df_key_exchange(self.network)
-            if success:
-                self.network = recvSend(self.client_socket,key_df)
-            else:
-                print("Error")
-                return
+            if key_exchange == "Diffie-Hellman":
+                success, key_df = df_key_exchange(self.network)
+                if success:
+                    self.network = recvSend(self.client_socket,key_df)
+                else:
+                    print("Error")
+                    return
 
 
         to_send = f"{LOG_MSG}{DELIMITER}{username}{DELIMITER}{password}"
@@ -353,12 +358,11 @@ class LoginForm:
         self.back_button_widget.image = self.back_btn_photo
         self.back_button_widget.place(x=800, y=490)
 
-        self.back_button_widget.config(command=self.return_to_login)
-
+        self.back_button_widget.config(command=lambda: self.return_to_login(False))
 
 
     def handle_register(self):
-
+        from client import rsa_key_exchange, create_aes_key, df_key_exchange
         username = self.reg_user_entry.get()
         password = self.reg_pass_entry.get()
         email = self.reg_email_entry.get()
@@ -368,11 +372,21 @@ class LoginForm:
             print("Enter username and password")
             return
 
+        key = create_aes_key()
+        success, key = rsa_key_exchange(key, self.network)
+
+        if success:
+            self.network = recvSend(self.client_socket, key)
+            self.have_key = True
+        else:
+            print("Error")
+            return
+
         to_send = f"{REG_MSG}{DELIMITER}{username}{DELIMITER}{password}{DELIMITER}{confirm_password}{DELIMITER}{email}{DELIMITER}{NUM_OF_CUPS}"
         try:
             self.network.send_with_size(to_send.encode())
             response = self.network.recv_by_size().decode()
-            print(f"Server saya:{response}")
+            print(f"Server say:{response}")
 
             if "EML" in response:
                 self.email_code_page("register")
@@ -383,9 +397,9 @@ class LoginForm:
 
 
 
-    def return_to_login(self):
+    def return_to_login(self,p):
         self.clear_screen()
-        self.__init__(self.window, self.network)
+        self.__init__(self.window, self.network,p)
 
 
     def email_code_page(self,type_of_request):
@@ -429,8 +443,7 @@ class LoginForm:
         self.back_button_widget.image = self.back_btn_photo
         self.back_button_widget.place(x=800, y=490)
 
-        self.back_button_widget.config(command=self.return_to_login)
-
+        self.back_button_widget.config(command=lambda: self.return_to_login(False))
 
     def submit_code(self,type_of_request):
         code = self.code_entry.get()
@@ -440,7 +453,7 @@ class LoginForm:
         if type_of_request == "register":
             if "OKR" in response:
                 print("good registry")
-                self.return_to_login()
+                self.return_to_login(True)
         else:
             if response == GOOD_EMAIL_CODE:
                 response = self.network.recv_by_size().decode()
@@ -503,7 +516,7 @@ class LoginForm:
         self.back_button_widget.image = self.back_btn_photo
         self.back_button_widget.place(x=800, y=490)
 
-        self.back_button_widget.config(command=self.return_to_login)
+        self.back_button_widget.config(command=lambda: self.return_to_login(False))
 
 
 
@@ -551,8 +564,15 @@ class LoginForm:
         resized_back_btn = back_btn_img.resize((60, 60))
         self.back_btn_photo = ImageTk.PhotoImage(resized_back_btn)
 
-        self.back_to_lgn_btn = Button(self.forget_frame, image=self.back_btn_photo, bd=0, bg="white",
-                                      activebackground="white", cursor="hand2", command=self.return_to_login)
+        self.back_to_lgn_btn = Button(
+            self.forget_frame,
+            image=self.back_btn_photo,
+            bd=0,
+            bg="white",
+            activebackground="white",
+            cursor="hand2",
+            command=lambda: self.return_to_login(False)
+        )
         self.back_to_lgn_btn.image = self.back_btn_photo
         self.back_to_lgn_btn.place(x=820, y=295)
 
@@ -647,7 +667,20 @@ class LoginForm:
 
 
     def wait_screen(self):
-        pass
+        to_send = JOIN_GAME
+        self.network.send_with_size(to_send)
+
+        from_server = self.network.recv_by_size()
+        if from_server:
+            print("good from server new")
+
+            self.window.withdraw()
+            game = Game(self.network)
+            game.run()
+
+            self.window.deiconify()
+
+
 
 
 
@@ -658,6 +691,5 @@ class LoginForm:
 
 def page(network_client):
     window = Tk()
-    LoginForm(window,network_client)
+    LoginForm(window,network_client,False)
     window.mainloop()
-

@@ -12,6 +12,8 @@ class recvSend:
         if key is not None:
             self.aes_key = SecureSession_AES(key)
 
+
+
     def recv_by_size(self):
         size_header = b''
         data_len = 0
@@ -67,3 +69,7 @@ class recvSend:
             print ("\nSent(%s)>>>" % (len_data,), end='')
             print ("%s"%(to_send[:min(len(to_send),self.LEN_TO_PRINT)],))
 
+
+
+    def set_timeout(self):
+        self.sock.settimeout(60)

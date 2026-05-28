@@ -1,6 +1,5 @@
-#server
 SERVER_IP = "192.168.1.119"
-SERVER_PORT = 12355
+SERVER_PORT = 12360
 PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"
 
 ERROR_MSG_LOG_REG = "ERR|error try again"
@@ -10,11 +9,13 @@ GOOD_EMAIL_CODE = "OKC|good code"
 FOR_PASSWORD = "FOR|enter new password"
 FOR_SUCCESSFUL = "FOR|good change password"
 EMAIL_MESSAGE_SEND = "EML| we send a code to your email enter him"
+JOIN_GAME = "JON|find me game"
 EMAIL_SENDER = "assafgruengard@gmail.com"
 EMAIL_PASSWORD = "gkybysjdxnbjvowc"
 KEY_SUCCESSFUL = "KEY|we have a key"
 RSA_MSG = "RSA|OK"
 DH_MSG = "DPH|OK"
+JON_MSG_OK = "JON|OK"
 DELIMITER = "|"
 RSA_PUBLIC_KEY_MSG = "RSA|send me your public key"
 DH_PUBLIC_KEY_MSG = "DPH|send me your public key"
@@ -23,7 +24,7 @@ DH_FIRST = "DPH"
 DELIMITER2 = b"|"
 GET_USER = "GET"
 
-#client
+JOIN_MSG = "JON"
 REG_MSG = "REG"
 LOG_MSG = "LOG"
 FOR_MSG = "FOR"
