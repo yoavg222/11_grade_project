@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 import pygame
 from constants import DELIMITER, TUR, MIS, HIT, ATT
 

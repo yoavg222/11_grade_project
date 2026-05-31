@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 SERVER_IP = "192.168.1.119"
 SERVER_PORT = 12360
 PICKLE_PATH = "C:\\School_11_Grade\\DataBase\\Users_DataBase.pkl"

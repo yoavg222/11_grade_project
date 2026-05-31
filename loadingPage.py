@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 from tkinter import *
 from tkinter.ttk import Progressbar
 import sys

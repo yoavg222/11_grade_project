@@ -1,3 +1,4 @@
+__author__ = 'yoav'
 from SecureSession import SecureSession_AES
 
 class recvSend:

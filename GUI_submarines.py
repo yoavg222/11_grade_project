@@ -1,3 +1,7 @@
+__author__ = 'yoav'
+
+
+
 from tkinter import *
 from PIL import ImageTk, Image
 

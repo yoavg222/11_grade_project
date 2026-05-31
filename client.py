@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 import socket
 from GUI_submarines import page
 from cryptography.hazmat.primitives import hashes

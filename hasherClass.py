@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 from pepper import pepper_users
 import os
 import hashlib

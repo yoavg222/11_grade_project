@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 import random
 
 class Room:

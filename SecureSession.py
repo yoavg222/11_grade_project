@@ -1,3 +1,6 @@
+__author__ = 'yoav'
+
+
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import os
 
