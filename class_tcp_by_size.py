@@ -71,5 +71,5 @@ class recvSend:
 
 
 
-    def set_timeout(self):
-        self.sock.settimeout(60)
+    def set_timeout(self,sec):
+        self.sock.settimeout(sec)

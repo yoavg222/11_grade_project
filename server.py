@@ -19,7 +19,7 @@ from dhClass import DH
 from serverThread import workerThread
 from constants import SERVER_IP, SERVER_PORT, PICKLE_PATH, DELIMITER, ERROR_MSG_LOG_REG, REG_SUCCESSFUL, LOG_SUCCESSFUL, \
     FOR_PASSWORD, FOR_SUCCESSFUL, EMAIL_MESSAGE_SEND, RSA_MSG, DH_MSG, EMAIL_SENDER, EMAIL_PASSWORD, \
-    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,GET_USER,JOIN_MSG,JON_MSG_OK
+    REG_MSG, RSA_PUBLIC_KEY_MSG, RSA_FIRST, LOG_MSG, FOR_MSG, GOOD_EMAIL_CODE, HOME_BUTTON, DH_FIRST,DH_PUBLIC_KEY_MSG,GET_USER,JOIN_MSG,JON_MSG_OK,TUR,ATT,HIT,MIS
 
 
 #global variables
@@ -37,47 +37,73 @@ rsa_session = RSA()
 def game_logic(player1, player2):
     p1: recvSend = player1
     p2: recvSend = player2
-    
-    first_places= []
-    second_places = []
-    
+
     room = Room(p1, p2)
     num = room.who_first()
 
-
     if num == 1:
-        first = p1  
+        first = p1
         second = p2
     else:
         first = p2
         second = p1
-    
+
     first.send_with_size("FIR| chose 3 places")
     second.send_with_size("SEC| chose 3 places")
-    
-    first.set_timeout()
-    second.set_timeout()
+
+    first.set_timeout(60)
+    second.set_timeout(60)
 
     try:
-        place_first = first.recv_by_size()
-        place_second = second.recv_by_size()
-
-        place_first = place_first.split(DELIMITER)
-        place_second = place_second.split(DELIMITER)
+        place_first = first.recv_by_size().decode().split(DELIMITER)
+        place_second = second.recv_by_size().decode().split(DELIMITER)
 
         first_places = room.add_place_to_lst(place_first)
         second_places = room.add_place_to_lst(place_second)
-
-
-    except socket.timeout:
-        print("Timeout: One of the players took too long!")
     except Exception as e:
         print(f"Error in game_logic: {e}")
+        return
+
+    p1_ships = first_places
+    p2_ships = second_places
+
+    current_player = first
+    opponent = second
 
 
+    boards = {id(first): p2_ships, id(second): p1_ships}
+
+    current_player.send_with_size(TUR)
+
+    while len(p1_ships) > 0 and len(p2_ships) > 0:
+        data = current_player.recv_by_size().decode().split(DELIMITER)
+
+        if data[0] == ATT:
+            attack_pos = data[1]
+            target_ships = boards[id(current_player)]
+
+            if attack_pos in target_ships:
+                target_ships.remove(attack_pos)
+                msg_to_all = f"{HIT}{DELIMITER}{attack_pos}"
+            else:
+                msg_to_all = f"{MIS}{DELIMITER}{attack_pos}"
+
+            current_player.send_with_size(msg_to_all)
+            opponent.send_with_size(msg_to_all)
 
 
+            if len(p1_ships) == 0 or len(p2_ships) == 0:
+                break
 
+            current_player, opponent = opponent, current_player
+            current_player.send_with_size(TUR)
+
+    if len(p1_ships) == 0:
+        second.send_with_size("WIN")
+        first.send_with_size("LOS")
+    else:
+        first.send_with_size("WIN")
+        second.send_with_size("LOS")
 
 
 

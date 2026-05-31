@@ -40,3 +40,8 @@ user_password = ""
 HOME_BUTTON = "HOME"
 ASSAF = "ASSAF"
 
+HIT = "HIT"
+TUR = "TUR"
+MIS = "MIS"
+ATT = "ATT"
+
